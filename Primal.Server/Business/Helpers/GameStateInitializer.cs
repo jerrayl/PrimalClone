@@ -32,12 +32,14 @@ namespace Primal.Business.Helpers
                 var deck = useDefaultLoadout ? GreatBow.ActionCards.Where(x => x.Group == CardGroup.S).Select(x => x.Id).ToList() : [];
                 deck.Shuffle();
                 var mastery = useDefaultLoadout ? GreatBow.MasteryCards.Where(x => x.Group == CardGroup.S).Single().Id : 0;
+                var potions = new int?[] {1, null, null};
 
                 gameState.Players.Add(new Player
                 {
                     Type = playerType,
                     Deck = deck,
-                    Mastery = mastery
+                    Mastery = mastery,
+                    Potions = potions
                 });
             }
 

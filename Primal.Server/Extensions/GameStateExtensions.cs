@@ -6,9 +6,9 @@ namespace Primal.Extensions
 {
     public static class GameStateExtensions
     {
-        public static bool Equals(this GameState state, GameState other)
+        public static string Serialize(this GameState state)
         {
-            return JsonSerializer.Serialize(state).Equals(JsonSerializer.Serialize(other));
+            return JsonSerializer.Serialize(state);
         }
 
      

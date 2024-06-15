@@ -23,6 +23,7 @@ namespace Primal.Common
         public int Struggle { get; set; }
         // TODO: Bonus Damage
         public List<AttritionCard> AttritionDeck { get; set; } = [];
+        public List<AttritionCard> AttritionDiscardPile { get; set; } = [];
         public int[] CurrentBehaviors { get; set; } = [];
         public List<int> BehaviorDeck { get; set; } = [];
         public List<int> BehaviorDiscardPile { get; set; } = [];
@@ -132,7 +133,12 @@ namespace Primal.Common
 
     public record EquipmentCard : CardDefinition
     {
+        public int Level { get; set; }
         public EquipmentType Type { get; set; }
-        public int? Health { get; set; }
+    }
+
+    public record ArmorCard : EquipmentCard
+    {
+        public int Health { get; set; }
     }
 }
