@@ -5,8 +5,8 @@ namespace Primal.Common
     public record GameState
     {
         public int Round { get; set; } = 1;
+        public RoundPhase RoundPhase { get; set; }
         public int? ActivePlayer { get; set; }
-        public HashSet<int> PlayerTurnOrder { get; set; } = [];
         public Monster Monster { get; set; } = new();
         public List<Player> Players { get; set; } = [];
         public List<int> TriggeredMonsterBehaviors = [];
@@ -15,14 +15,15 @@ namespace Primal.Common
     public record Monster
     {
         public MonsterType Type { get; set; }
-        public BoardSector Orientation { get; set; }
-        public int Health { get; set; }
+        public int AggressionLevel { get; set; }
+        public BoardSector Orientation { get; set; } = BoardSector.South;
+        public int Health { get; set; } = GlobalConstants.MONSTER_STARTING_HEALTH;
         public int Damage { get; set; }
-        public int Stance { get; set; }
+        public int Stance { get; set; } = 1;
         public int Struggle { get; set; }
         // TODO: Bonus Damage
         public List<AttritionCard> AttritionDeck { get; set; } = [];
-        public int?[] CurrentBehaviors { get; set; } = [null, null, null];
+        public int[] CurrentBehaviors { get; set; } = [];
         public List<int> BehaviorDeck { get; set; } = [];
         public List<int> BehaviorDiscardPile { get; set; } = [];
     }
@@ -31,8 +32,8 @@ namespace Primal.Common
     {
         public List<StanceCard> StanceCards { get; set; }
         public List<BehaviorCard> BehaviorCards { get; set; }
-        public List<PerilCard> PerilCards { get; set; }
-        public List<ObjectiveCard> ObjectiveCards { get; set; }
+        public List<PerilObjectiveCard> PerilCards { get; set; }
+        public List<PerilObjectiveCard> ObjectiveCards { get; set; }
     }
 
     public record AttritionCard
@@ -42,6 +43,7 @@ namespace Primal.Common
 
     public record BehaviorCard : CardDefinition
     {
+        public int AggressionIcon { get; set; }
         public HashSet<BehaviorTrigger> Triggers { get; set; }
         public int RefreshValue { get; set; }
         public MonsterTrait? Trait { get; set; }
@@ -52,31 +54,33 @@ namespace Primal.Common
 
     public record StanceCard
     {
+        public int AggressionLevel { get; set; }
         public int StanceNumber { get; set; }
         public int Toughness { get; set; }
         public int StanceProgression { get; set; }
         public int Damage { get; set; }
         public HashSet<MonsterSector> Exposure { get; set; }
+        public string? TriggerText { get; set; }
     }
 
-    public record PerilCard : CardDefinition
+    public record PerilObjectiveCard
     {
         public int StanceNumber { get; set; }
-    }
-
-    public record ObjectiveCard : CardDefinition
-    {
-        public int StanceNumber { get; set; }
+        public int AggressionIcon { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string AbilityText { get; set; } = string.Empty;
     }
 
     public record Player
     {
         public ClassType Type { get; set; }
+        public BoardSector Location { get; set; } = BoardSector.South;
         public TurnPhase? TurnPhase { get; set; }
         public bool HasTakenTurn { get; set; }
         public List<int> Sequence { get; set; } = [];
         public List<int> Deck { get; set; } = [];
         public List<int> DiscardPile { get; set; } = [];
+        public int Mastery { get; set; }
         public int Damage { get; set; }
         public HashSet<PlayerTokens> Tokens { get; set; } = [];
         public int? Helm { get; set; }
@@ -95,8 +99,8 @@ namespace Primal.Common
     public record CardDefinition
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string AbilityText { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string AbilityText { get; set; } = string.Empty;
     }
 
     public record PlayerCardDefinition : CardDefinition
