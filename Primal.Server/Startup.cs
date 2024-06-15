@@ -4,11 +4,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Primal.Business;
 using Primal.Repositories;
 using Primal.SignalR;
-using Primal.Business.Services;
-using Primal.Business.Bosses;
 using Primal.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,12 +31,6 @@ namespace Primal
             services.AddTransient<GoogleJwtBearerHandler>();
             services.AddScoped<IUserContextFactory, UserContextFactory>();
             services.AddScoped(sp => sp.GetRequiredService<IUserContextFactory>().UserContext);
-            services.AddScoped<IUserManagement, UserManagement>();
-            services.AddScoped<IGame, Game>();
-            services.AddScoped<IMightCardsService, MightCardsService>();
-            services.AddScoped<INotificationService, NotificationService>();
-            services.AddScoped<IBossFactory, BossFactory>();
-            services.AddScoped<IBossDependencies, BossDependencies>();
             services.AddScoped(typeof(IDatabaseRepository<>), typeof(DatabaseRepository<>));
 
             // Add Swagger

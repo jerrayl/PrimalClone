@@ -5,11 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Primal.Infrastructure
 {
-    public class EncounterIdRequired : AuthorizeAttribute, IAuthorizationFilter
+    public class ScenarioIdRequired : AuthorizeAttribute, IAuthorizationFilter
     {
         public void OnAuthorization(AuthorizationFilterContext filterContext)
         {
-            if (filterContext.HttpContext.RequestServices.GetRequiredService<UserContext>().EncounterId is null)
+            if (filterContext.HttpContext.RequestServices.GetRequiredService<UserContext>().ScenarioId is null)
             {
                 filterContext.Result = new UnauthorizedResult();
             }

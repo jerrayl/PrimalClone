@@ -22,14 +22,14 @@ namespace Primal.Infrastructure
                 return;
             }
 
-            int encounterId = 0;
-            context.Request.Cookies.TryGetValue(GlobalConstants.ENCOUNTER_ID, out var encounterIdString);
-            var hasEncounterId = encounterIdString is not null && int.TryParse(encounterIdString, out encounterId);
+            int scenarioId = 0;
+            context.Request.Cookies.TryGetValue(GlobalConstants.SCENARIO_ID, out var scenarioIdString);
+            var hasScenarioId = scenarioIdString is not null && int.TryParse(scenarioIdString, out scenarioId);
             var email = claims.Where(x => x.Type.Equals(JwtRegisteredClaimNames.Email)).Single().Value;
             var givenName = claims.Where(x => x.Type.Equals(JwtRegisteredClaimNames.GivenName)).Single().Value;
             var familyName = claims.Where(x => x.Type.Equals(JwtRegisteredClaimNames.FamilyName)).Single().Value;
 
-            await context.RequestServices.GetRequiredService<IUserContextFactory>().SetContext(email, givenName, familyName, hasEncounterId ? encounterId : null);
+            await context.RequestServices.GetRequiredService<IUserContextFactory>().SetContext(email, givenName, familyName, hasScenarioId ? scenarioId : null);
             await _next(context);
         }
     }

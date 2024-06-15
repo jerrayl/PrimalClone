@@ -12,10 +12,10 @@ namespace Primal.SignalR
             _notificationService = notificationService;
         }
 
-        public async Task<string> Register(int encounterId)
+        public async Task<string> Register(int scenarioId)
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, encounterId.ToString());
-            await _notificationService.UpdateGameState(encounterId);
+            await Groups.AddToGroupAsync(Context.ConnectionId, scenarioId.ToString());
+            await _notificationService.UpdateGameState(scenarioId);
             return GlobalConstants.SUCCESS;
         }
     }

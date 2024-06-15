@@ -10,12 +10,12 @@ namespace Primal.Infrastructure
         public string Email { get; set; }
         public string GivenName { get; set; }
         public string FamilyName { get; set; }
-        public int? EncounterId { get; set; }
+        public int? ScenarioId { get; set; }
     }
 
     public interface IUserContextFactory
     {
-        public Task SetContext(string email, string givenName, string familyName, int? encounterId);
+        public Task SetContext(string email, string givenName, string familyName, int? scenarioId);
         public UserContext UserContext { get; }
     }
 
@@ -26,7 +26,7 @@ namespace Primal.Infrastructure
 
         public UserContext UserContext => _userContext;
 
-        public async Task SetContext(string email, string givenName, string familyName, int? encounterId)
+        public async Task SetContext(string email, string givenName, string familyName, int? scenarioId)
         {
             // Todo: cache fetching of user
             var user = _users.ReadOne(x => x.Email.Equals(email));
@@ -42,7 +42,7 @@ namespace Primal.Infrastructure
                 Email = email,
                 GivenName = givenName,
                 FamilyName = familyName,
-                EncounterId =  encounterId
+                ScenarioId =  scenarioId
             };
         }
     }
