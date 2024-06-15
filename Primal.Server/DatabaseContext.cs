@@ -11,5 +11,6 @@ namespace Primal
             base(options)
         {
         }
+        public DbSet<User> Users { get; set; }
     }
 }

@@ -1,6 +1,4 @@
-﻿using Primal.Entities;
-using AutoMapper;
-using Primal.Models;
+﻿using AutoMapper;
 
 namespace Primal.Infrastructure
 {
