@@ -1,0 +1,102 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.main {
+  display: grid;
+  grid-template-columns: calc(var(--s)/2 + var(--mh)) repeat(9,calc(var(--s) + 2*var(--mh)) );
+  justify-content:center;
+  --s: 4.6rem; /* size */
+  /* clip-path */
+  --h: 0.25;  
+  --v: 0.5;  
+  --hc:calc(clamp(0,var(--h),0.5) * var(--s)) ;
+  --vc:calc(clamp(0,var(--v),0.5) * var(--s)); 
+  
+  /*margin */
+  --mv: 0.03rem; /* vertical */
+  --mh: calc(var(--mv) + (var(--s) - 2*var(--hc))/2); /* horizontal */
+  /* for the float*/
+  --f: calc(2*var(--s) + 4*var(--mv)  - 2*var(--vc) - 1px);
+}
+
+.container {
+  grid-column: 1/-1;
+  font-size: 0; /*disable white space between inline block element */
+  margin-left: -35px;
+}
+
+.container div {
+  width: var(--s);
+  margin: var(--mv) var(--mh);
+  height: var(--s); 
+  display: inline-block;
+  font-size:initial;
+  clip-path: polygon(var(--hc) 0, calc(100% - var(--hc)) 0,100% var(--vc),100% calc(100% - var(--vc)), calc(100% - var(--hc)) 100%,var(--hc) 100%,0 calc(100% - var(--vc)),0 var(--vc));
+  margin-bottom: calc(var(--mv) - var(--vc)); 
+}
+
+.container div:nth-child(18n+1) {
+  visibility: hidden;
+}
+
+.container::before{
+  content: "";
+  width: calc(var(--s)/2 + var(--mh));
+  float: left;
+  height: 120%;
+  shape-outside: repeating-linear-gradient(     
+                   #0000 0 calc(var(--f) - 2px),      
+                   #000  0 var(--f));
+}
+
+.h-2px {
+  height: 2px;
+}
+
+.defense {
+  clip-path: polygon(5% 0, 95% 0, 90% 50%, 50% 100%, 10% 50%);
+}
+
+.animus {
+  clip-path: polygon(50% 0%, 76% 16%, 85% 33%, 86% 57%, 77% 82%, 50% 100%, 27% 84%, 17% 63%, 17% 33%, 37% 6%);
+}
+
+.img {
+  max-height: 80%;
+}

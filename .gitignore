@@ -1,0 +1,7 @@
+.vscode
+.vs
+obj
+bin
+Primal.Server/Primal.Server.csproj.user
+Primal.Server/Properties/launchSettings.json
+Primal.Client/src/utils/apiModels.ts
