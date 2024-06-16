@@ -1,6 +1,7 @@
 using Primal.Business;
 using Primal.Common;
 using Primal.Extensions;
+using System.Linq;
 using Xunit;
 
 namespace PrimalTests
@@ -8,19 +9,18 @@ namespace PrimalTests
     public class RoundOrderTests
     {
         const int FIRST_PLAYER_INDEX = 0;
+        private GameState startingGameState = new StartingGameStates().ROUND_START_GAME_STATE;
 
         [Fact]
         public void RoundStarts_InConsumePhase()
         {
-            var startingGameState = new StartingGameStates().ROUND_START_GAME_STATE;
-
             Assert.Equal(RoundPhase.Consume, startingGameState.RoundPhase);
         }
 
         [Fact]
         public void ConsumingAlemore_HealsPlayer_RemovesPotion()
         {
-            var gameState = new StartingGameStates().ROUND_START_GAME_STATE;
+            var gameState = startingGameState.Copy();
 
             // Setup 
             gameState.Players[FIRST_PLAYER_INDEX].Damage = 6;
@@ -40,7 +40,7 @@ namespace PrimalTests
         [Fact]
         public void ConsumingTwice_HasNoEffect()
         {
-            var gameState = new StartingGameStates().ROUND_START_GAME_STATE;
+            var gameState = startingGameState.Copy();
 
             // Setup 
             gameState.Players[FIRST_PLAYER_INDEX].Damage = 6;
@@ -58,6 +58,88 @@ namespace PrimalTests
 
             Assert.Equal(gameState.Serialize(), newGameState.Serialize());
         }
+
+
+        [Fact]
+        public void MonsterUpkeep_BehaviorRefreshSkippedInFirstRound_OneStruggleGainedPerPlayer()
+        {
+            var gameState = startingGameState.Copy();
+            
+            // Setup 
+            gameState.RoundPhase = RoundPhase.MonsterUpkeep;
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
+            {
+                gameState = PlayerActions.EndPhase(gameState, playerIndex);
+            }
+
+            // Update Setup to Expected
+            clonedGameState.RoundPhase = RoundPhase.PlayerTurn;
+            clonedGameState.Monster.Struggle += clonedGameState.Players.Count;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void LowestRefreshValueBehavior_IsDiscarded()
+        {
+            var gameState = startingGameState.Copy();
+            
+            // Setup 
+            gameState.RoundPhase = RoundPhase.MonsterUpkeep;
+            gameState.Round = 2;
+            gameState.Monster.CurrentBehaviors = [5, 3, 2]; // 2, 4, 6
+            gameState.Monster.BehaviorDeck.Insert(0, 1);
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
+            {
+                gameState = PlayerActions.EndPhase(gameState, playerIndex);
+            }
+
+            // Update Setup to Expected
+            clonedGameState.RoundPhase = RoundPhase.PlayerTurn;
+            clonedGameState.Monster.CurrentBehaviors = [1, 3, 2];
+            clonedGameState.Monster.BehaviorDeck.RemoveAt(0);
+            clonedGameState.Monster.BehaviorDiscardPile.Add(5);
+            clonedGameState.Monster.Struggle += gameState.Players.Count;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void LowestRefreshValueBehaviors_WhenTied_AreDiscarded()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            gameState.RoundPhase = RoundPhase.MonsterUpkeep;
+            gameState.Round = 2;
+            gameState.Monster.CurrentBehaviors = [4, 3, 7]; // 4, 4, 5
+            gameState.Monster.BehaviorDeck.Insert(0, 2);
+            gameState.Monster.BehaviorDeck.Insert(0, 1);
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
+            {
+                gameState = PlayerActions.EndPhase(gameState, playerIndex);
+            }
+
+            // Update Setup to Expected
+            clonedGameState.RoundPhase = RoundPhase.PlayerTurn;
+            clonedGameState.Monster.CurrentBehaviors = [1, 2, 7];
+            clonedGameState.Monster.BehaviorDeck.RemoveAt(0);
+            clonedGameState.Monster.BehaviorDeck.RemoveAt(0);
+            clonedGameState.Monster.BehaviorDiscardPile.Add(4);
+            clonedGameState.Monster.BehaviorDiscardPile.Add(3);
+            clonedGameState.Monster.Struggle += gameState.Players.Count;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
     }
 
     public class Tests
@@ -65,14 +147,14 @@ namespace PrimalTests
         // ROUND ORDER
 
         // 1: Consume
-        // Player can only consume once per round
-        // Potions are removed when they are consumed
+        // Player can only consume once per round - DONE
+        // Potions are removed when they are consumed - DONE
 
         // 2: Monster upkeep
-        // Lowest refresh value behavior of monster is discarded at start of round
-        // All behavior cards with lowest refresh value are discarded when there is a tie
-        // Behavior refresh is skipped in round 1
-        // Monster gains 1 struggle per player at start of round
+        // Behavior refresh is skipped in round 1 - DONE
+        // Lowest refresh value behavior of monster is discarded at start of round - DONE
+        // All behavior cards with lowest refresh value are discarded when there is a tie - DONE
+        // Monster gains 1 struggle per player at start of round - DONE
         // If struggle is higher than 3 * player count, unleash occurs
 
         // 3: Player turns
@@ -146,7 +228,7 @@ namespace PrimalTests
         // If multiple behavior cards are triggered, the player(s) can choose the resolution order
         // Any event or card ability is that triggers a behavior is fully resolved before the behavior is resolved
         // The behavior card (and rampage card if one is triggered) is discarded and new card(s) are drawn
-        // When the behavior deck is empty, the boss gains one struggle and the behavior discard pile is reshuffled
+        // When the behavior deck is empty, the boss gains one struggle and the behavior discard pile is reshuffled, and escalation is triggered
         // If two behavior cards are triggered at the same time, and a rampage card is drawn to replace the first, rampage is triggered
         // If multiple monster cards trigger at the same time, the order of trigger is stance -> peril -> behavior -> other cards, with players deciding the order of simultaneous effects
 

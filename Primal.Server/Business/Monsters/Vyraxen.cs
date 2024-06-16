@@ -1,11 +1,13 @@
+using System.Collections.Generic;
+using System.Linq;
 using Primal.Common;
 
 namespace Primal.Business.Helpers
 {
-    public static class Vyraxen
+    public class Vyraxen : IMonster
     {
-        public static int[] AttritionDeck { get { return GlobalConstants.BASE_ATTRITION_CARDS; } }
-        public static BehaviorCard[] BehaviorCards { get { return [
+        public int[] AttritionDeck { get { return GlobalConstants.BASE_ATTRITION_CARDS; } }
+        public Dictionary<int, BehaviorCard> BehaviorCards { get { return new List<BehaviorCard>(){
             new(){
                 Id = 1,
                 AggressionIcon = 0,
@@ -89,9 +91,9 @@ namespace Primal.Business.Helpers
                 Triggers = [BehaviorTrigger.RearSectorPlayerStart],
                 RefreshValue = 3
             }
-        ];}}
+        }.ToDictionary(x => x.Id, x => x);}}
 
-        public static StanceCard[] StanceCards { get { return [
+        public StanceCard[] StanceCards { get { return [
             new(){
                 AggressionLevel = 0,
                 StanceNumber = 1,
@@ -121,7 +123,7 @@ namespace Primal.Business.Helpers
         ];}}
 
 
-        public static PerilObjectiveCard[] PerilCards { get { return [
+        public PerilObjectiveCard[] PerilCards { get { return [
             new(){
                 StanceNumber = 1,
                 AggressionIcon = 2,
@@ -142,7 +144,7 @@ namespace Primal.Business.Helpers
             }
         ];}}
 
-        public static PerilObjectiveCard[] ObjectiveCards { get { return [
+        public PerilObjectiveCard[] ObjectiveCards { get { return [
             new(){
                 StanceNumber = 1,
                 AggressionIcon = 2,

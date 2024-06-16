@@ -78,6 +78,7 @@ namespace Primal.Common
         public BoardSector Location { get; set; } = BoardSector.South;
         public TurnPhase? TurnPhase { get; set; }
         public bool HasTakenTurn { get; set; }
+        public bool HasEndedPhase { get; set; }
         public List<int> Sequence { get; set; } = [];
         public List<int> Deck { get; set; } = [];
         public List<int> DiscardPile { get; set; } = [];
@@ -89,6 +90,7 @@ namespace Primal.Common
         public int? Item { get; set; }
         public int?[] Potions { get; set; } = [null, null, null];
         public bool HasConsumed { get; set; }
+        public bool HasUsedRevive { get; set; }
     }
 
     public record MasteryCardState

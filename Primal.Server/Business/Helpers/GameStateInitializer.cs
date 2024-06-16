@@ -11,16 +11,14 @@ namespace Primal.Business.Helpers
         {
             var gameState = new GameState();
             var monster = gameState.Monster;
-
+            var monsterDefinition = Mappings.MonsterMap(monsterType);
 
             // Initialize monster attrition deck
-            //TODO: Instantiate class of appropriate monster
-            monster.AttritionDeck = Vyraxen.AttritionDeck.Select(x => new AttritionCard { Value = x }).ToList();
+            monster.AttritionDeck = monsterDefinition.AttritionDeck.Select(x => new AttritionCard { Value = x }).ToList();
             monster.AttritionDeck.Shuffle();
 
             // Initialize monster behavior deck
-            //TODO: Instantiate class of appropriate monster
-            monster.BehaviorDeck = Vyraxen.BehaviorCards.Where(x => Mappings.AggressionIconMap(aggressionLevel).Contains(x.AggressionIcon)).Select(x => x.Id).ToList();
+            monster.BehaviorDeck = monsterDefinition.BehaviorCards.Values.Where(x => Mappings.AggressionIconMap(aggressionLevel).Contains(x.AggressionIcon)).Select(x => x.Id).ToList();
             monster.BehaviorDeck.Shuffle();
             monster.CurrentBehaviors = monster.BehaviorDeck.Take(GlobalConstants.MONSTER_BEHAVIOR_COUNT).ToArray();
             monster.BehaviorDeck.RemoveRange(0, GlobalConstants.MONSTER_BEHAVIOR_COUNT);
