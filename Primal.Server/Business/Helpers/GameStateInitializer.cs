@@ -41,6 +41,9 @@ namespace Primal.Business.Helpers
                 });
             }
 
+            // Todo: Allow players to choose first player
+            gameState.Players.First().Tokens.Add(PlayerTokens.Aggro);
+
             return gameState;
         }
     }

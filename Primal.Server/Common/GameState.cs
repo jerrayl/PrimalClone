@@ -18,7 +18,6 @@ namespace Primal.Common
         public int AggressionLevel { get; set; }
         public BoardSector Orientation { get; set; } = BoardSector.South;
         public int Health { get; set; } = GlobalConstants.MONSTER_STARTING_HEALTH;
-        public int Damage { get; set; }
         public int Stance { get; set; } = 1;
         public int Struggle { get; set; }
         // TODO: Bonus Damage

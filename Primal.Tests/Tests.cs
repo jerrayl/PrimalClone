@@ -9,6 +9,7 @@ namespace PrimalTests
     public class RoundOrderTests
     {
         const int FIRST_PLAYER_INDEX = 0;
+        const int SECOND_PLAYER_INDEX = 1;
         private GameState startingGameState = new StartingGameStates().ROUND_START_GAME_STATE;
 
         [Fact]
@@ -72,12 +73,15 @@ namespace PrimalTests
             // Perform Action
             foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
             {
-                gameState = PlayerActions.EndPhase(gameState, playerIndex);
+                gameState = PlayerActions.EndRoundPhase(gameState, playerIndex);
             }
 
             // Update Setup to Expected
             clonedGameState.RoundPhase = RoundPhase.PlayerTurn;
             clonedGameState.Monster.Struggle += clonedGameState.Players.Count;
+            clonedGameState.ActivePlayer = FIRST_PLAYER_INDEX;
+            clonedGameState.Players[FIRST_PLAYER_INDEX].Tokens.Add(PlayerTokens.FirstPlayer);
+            clonedGameState.Players[FIRST_PLAYER_INDEX].TurnPhase = TurnPhase.Movement;
 
             Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
         }
@@ -97,7 +101,7 @@ namespace PrimalTests
             // Perform Action
             foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
             {
-                gameState = PlayerActions.EndPhase(gameState, playerIndex);
+                gameState = PlayerActions.EndRoundPhase(gameState, playerIndex);
             }
 
             // Update Setup to Expected
@@ -106,6 +110,9 @@ namespace PrimalTests
             clonedGameState.Monster.BehaviorDeck.RemoveAt(0);
             clonedGameState.Monster.BehaviorDiscardPile.Add(5);
             clonedGameState.Monster.Struggle += gameState.Players.Count;
+            clonedGameState.ActivePlayer = FIRST_PLAYER_INDEX;
+            clonedGameState.Players[FIRST_PLAYER_INDEX].Tokens.Add(PlayerTokens.FirstPlayer);
+            clonedGameState.Players[FIRST_PLAYER_INDEX].TurnPhase = TurnPhase.Movement;
 
             Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
         }
@@ -126,7 +133,7 @@ namespace PrimalTests
             // Perform Action
             foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
             {
-                gameState = PlayerActions.EndPhase(gameState, playerIndex);
+                gameState = PlayerActions.EndRoundPhase(gameState, playerIndex);
             }
 
             // Update Setup to Expected
@@ -137,6 +144,137 @@ namespace PrimalTests
             clonedGameState.Monster.BehaviorDiscardPile.Add(4);
             clonedGameState.Monster.BehaviorDiscardPile.Add(3);
             clonedGameState.Monster.Struggle += gameState.Players.Count;
+            clonedGameState.ActivePlayer = FIRST_PLAYER_INDEX;
+            clonedGameState.Players[FIRST_PLAYER_INDEX].Tokens.Add(PlayerTokens.FirstPlayer);
+            clonedGameState.Players[FIRST_PLAYER_INDEX].TurnPhase = TurnPhase.Movement;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+
+        [Fact]
+        public void WhenStruggleThriceOrMorePlayerCount_UnleashTriggers()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            gameState.RoundPhase = RoundPhase.MonsterUpkeep;
+            gameState.Monster.Struggle = 4;
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
+            {
+                gameState = PlayerActions.EndRoundPhase(gameState, playerIndex);
+            }
+
+            // Update Setup to Expected
+            clonedGameState.RoundPhase = RoundPhase.PlayerTurn;
+            clonedGameState.Monster.Struggle = 2;
+            foreach(var player in clonedGameState.Players)
+            {
+                player.Damage++;
+            }
+            clonedGameState.ActivePlayer = FIRST_PLAYER_INDEX;
+            clonedGameState.Players[FIRST_PLAYER_INDEX].Tokens.Add(PlayerTokens.FirstPlayer);
+            clonedGameState.Players[FIRST_PLAYER_INDEX].TurnPhase = TurnPhase.Movement;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void PlayerWithAggroToken_BecomesFirstPlayer()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            gameState.RoundPhase = RoundPhase.MonsterUpkeep;
+            gameState.Players[FIRST_PLAYER_INDEX].Tokens.Remove(PlayerTokens.Aggro);
+            gameState.Players[SECOND_PLAYER_INDEX].Tokens.Add(PlayerTokens.Aggro);
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
+            {
+                gameState = PlayerActions.EndRoundPhase(gameState, playerIndex);
+            }
+
+            // Update Setup to Expected
+            clonedGameState.RoundPhase = RoundPhase.PlayerTurn;
+            clonedGameState.Players[SECOND_PLAYER_INDEX].Tokens.Add(PlayerTokens.FirstPlayer);
+            clonedGameState.ActivePlayer = SECOND_PLAYER_INDEX;
+            clonedGameState.Players[SECOND_PLAYER_INDEX].TurnPhase = TurnPhase.Movement;
+            clonedGameState.Monster.Struggle += clonedGameState.Players.Count;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+
+        [Fact]
+        public void ActivePlayerSwitches_WhenCurrentPlayerFinishesTurn()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            gameState.RoundPhase = RoundPhase.PlayerTurn;
+            gameState.ActivePlayer = FIRST_PLAYER_INDEX;
+            gameState.Players[FIRST_PLAYER_INDEX].TurnPhase = TurnPhase.EndOfTurn;
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.EndTurnPhase(gameState, FIRST_PLAYER_INDEX);
+
+            // Update Setup to Expected
+            clonedGameState.Players[FIRST_PLAYER_INDEX].HasTakenTurn = true;
+            clonedGameState.Players[FIRST_PLAYER_INDEX].TurnPhase = null;
+            clonedGameState.ActivePlayer = SECOND_PLAYER_INDEX;
+            clonedGameState.Players[SECOND_PLAYER_INDEX].TurnPhase = TurnPhase.Movement;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void EndOfRoundTriggers_WhenAllPlayersFinishTurn()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            gameState.RoundPhase = RoundPhase.PlayerTurn;
+            gameState.Players[FIRST_PLAYER_INDEX].HasTakenTurn = true;
+            gameState.ActivePlayer = SECOND_PLAYER_INDEX;
+            gameState.Players[SECOND_PLAYER_INDEX].TurnPhase = TurnPhase.EndOfTurn;
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.EndTurnPhase(gameState, SECOND_PLAYER_INDEX);
+
+            // Update Setup to Expected
+            clonedGameState.Players[FIRST_PLAYER_INDEX].HasTakenTurn = false;
+            clonedGameState.Players[SECOND_PLAYER_INDEX].TurnPhase = null;
+            clonedGameState.ActivePlayer = null;
+            clonedGameState.RoundPhase = RoundPhase.EndOfRound;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void RoundAdvances_AfterEndOfRoundPhase()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            gameState.RoundPhase = RoundPhase.EndOfRound;
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            foreach (var playerIndex in Enumerable.Range(0, gameState.Players.Count))
+            {
+                gameState = PlayerActions.EndRoundPhase(gameState, playerIndex);
+            }
+
+            // Update Setup to Expected
+            clonedGameState.Round++;
+            clonedGameState.RoundPhase = RoundPhase.Consume;
 
             Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
         }
@@ -155,7 +293,7 @@ namespace PrimalTests
         // Lowest refresh value behavior of monster is discarded at start of round - DONE
         // All behavior cards with lowest refresh value are discarded when there is a tie - DONE
         // Monster gains 1 struggle per player at start of round - DONE
-        // If struggle is higher than 3 * player count, unleash occurs
+        // If struggle is equal to higher than 3 * player count, unleash occurs
 
         // 3: Player turns
         // Player with aggro becomes first player at start of round

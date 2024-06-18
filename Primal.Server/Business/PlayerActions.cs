@@ -19,7 +19,49 @@ namespace Primal.Business
             throw new NotImplementedException();
         }
 
-        public static GameState EndPhase(GameState gameState, int playerIndex)
+        public static GameState EndTurnPhase(GameState gamesState, int playerIndex)
+        {
+            if (gamesState.ActivePlayer != playerIndex)
+            {
+                return gamesState;
+            }
+
+            var newGameState = gamesState.Copy();
+            var player = newGameState.Players[playerIndex];
+
+            switch (player.TurnPhase)
+            {
+                case TurnPhase.Movement:
+                    break;
+                case TurnPhase.Action:
+                    break;
+                case TurnPhase.Attrition:
+                    break;
+                case TurnPhase.EndOfTurn:
+                    player.TurnPhase = null;
+                    player.HasTakenTurn = true;
+                    newGameState.ActivePlayer = null;
+
+                    if (newGameState.Players.All(x => x.HasTakenTurn))
+                    {
+                        foreach(var otherPlayer in newGameState.Players)
+                        {
+                            otherPlayer.HasTakenTurn = false;
+                        }
+                        newGameState.RoundPhase = RoundPhase.EndOfRound;
+                        return newGameState;
+                    }
+
+                    var nextPlayer = newGameState.Players.Select((player, index) => (player, index)).Where(x => !x.player.HasTakenTurn).First();
+                    newGameState.ActivePlayer = nextPlayer.index;
+                    nextPlayer.player.TurnPhase = TurnPhase.Movement;
+                    break;
+            }
+
+            return newGameState;
+        }
+
+        public static GameState EndRoundPhase(GameState gameState, int playerIndex)
         {
             var newGameState = gameState.Copy();
 
@@ -57,20 +99,27 @@ namespace Primal.Business
 
                                 // Perform escalation trigger
                                 monster.Struggle += 1;
-                                // Check for unleash
+
+                                newGameState = MonsterActions.CheckAndPerformUnleash(newGameState);
                             }
                         }
                     }
                     monster.Struggle += newGameState.Players.Count; //TODO: Account for struggle gain modifier
+                    newGameState = MonsterActions.CheckAndPerformUnleash(newGameState);
 
                     newGameState.RoundPhase = RoundPhase.PlayerTurn;
+                    var firstPlayer = newGameState.Players.Select((player, index) => (player, index)).Where(x => x.player.Tokens.Contains(PlayerTokens.Aggro)).Single();
+                    newGameState.ActivePlayer = firstPlayer.index;
+                    firstPlayer.player.Tokens.Add(PlayerTokens.FirstPlayer);
+                    firstPlayer.player.TurnPhase = TurnPhase.Movement;
 
                     break;
                 case RoundPhase.PlayerTurn:
-                    // perform end turn
+                    //All players ending their turn currently switches to the next phase, so no need to end phase.
                     break;
                 case RoundPhase.EndOfRound:
-                    //perform end of round
+                    newGameState.RoundPhase = RoundPhase.Consume;
+                    newGameState.Round++;
                     break;
             }
 
