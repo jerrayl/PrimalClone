@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Primal.Common;
 
-namespace Primal.Business.Helpers
+namespace Primal.Business.Monsters
 {
-    public class Vyraxen : IMonster
+    public class Vyraxen : IMonsterDefinition
     {
         public int[] AttritionDeck { get { return GlobalConstants.BASE_ATTRITION_CARDS; } }
         public Dictionary<int, BehaviorCard> BehaviorCards { get { return new List<BehaviorCard>(){

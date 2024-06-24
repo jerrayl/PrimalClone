@@ -1,4 +1,4 @@
-using Primal.Business;
+using Primal.Business.Players;
 using Primal.Common;
 using Primal.Extensions;
 using System.Linq;
@@ -10,7 +10,7 @@ namespace PrimalTests
     {
         const int FIRST_PLAYER_INDEX = 0;
         const int SECOND_PLAYER_INDEX = 1;
-        private GameState startingGameState = new StartingGameStates().ROUND_START_GAME_STATE;
+        private readonly GameState startingGameState = StartingGameStates.ROUND_START_GAME_STATE;
 
         [Fact]
         public void RoundStarts_InConsumePhase()
@@ -65,7 +65,7 @@ namespace PrimalTests
         public void MonsterUpkeep_BehaviorRefreshSkippedInFirstRound_OneStruggleGainedPerPlayer()
         {
             var gameState = startingGameState.Copy();
-            
+
             // Setup 
             gameState.RoundPhase = RoundPhase.MonsterUpkeep;
             var clonedGameState = gameState.Copy();
@@ -90,7 +90,7 @@ namespace PrimalTests
         public void LowestRefreshValueBehavior_IsDiscarded()
         {
             var gameState = startingGameState.Copy();
-            
+
             // Setup 
             gameState.RoundPhase = RoundPhase.MonsterUpkeep;
             gameState.Round = 2;
@@ -171,7 +171,7 @@ namespace PrimalTests
             // Update Setup to Expected
             clonedGameState.RoundPhase = RoundPhase.PlayerTurn;
             clonedGameState.Monster.Struggle = 2;
-            foreach(var player in clonedGameState.Players)
+            foreach (var player in clonedGameState.Players)
             {
                 player.Damage++;
             }
@@ -222,7 +222,7 @@ namespace PrimalTests
             var clonedGameState = gameState.Copy();
 
             // Perform Action
-            gameState = PlayerActions.EndTurnPhase(gameState, FIRST_PLAYER_INDEX);
+            gameState = PlayerActions.EndTurnPhase(gameState);
 
             // Update Setup to Expected
             clonedGameState.Players[FIRST_PLAYER_INDEX].HasTakenTurn = true;
@@ -246,7 +246,7 @@ namespace PrimalTests
             var clonedGameState = gameState.Copy();
 
             // Perform Action
-            gameState = PlayerActions.EndTurnPhase(gameState, SECOND_PLAYER_INDEX);
+            gameState = PlayerActions.EndTurnPhase(gameState);
 
             // Update Setup to Expected
             clonedGameState.Players[FIRST_PLAYER_INDEX].HasTakenTurn = false;
@@ -280,6 +280,147 @@ namespace PrimalTests
         }
     }
 
+    public class PlayerTurnTests
+    {
+        private readonly GameState startingGameState = StartingGameStates.PLAYER_TURN_GAME_STATE;
+
+        [Fact]
+        public void WhenInMovementPhase_PlayerCanMove()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.Move(gameState, BoardSector.East, 0);
+
+            // Update Setup to Expected
+            var clonedPlayer = clonedGameState.Players[gameState.ActivePlayer.Value];
+            clonedPlayer.Location = BoardSector.East;
+            clonedPlayer.DiscardPile.Add(clonedPlayer.Hand.First());
+            clonedPlayer.Hand.RemoveAt(0);
+            clonedPlayer.HasMoved = true;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void WhenNotMovementPhase_PlayerCannotMove()
+        {
+            var gameState = startingGameState.Copy();
+            gameState.Players[gameState.ActivePlayer.Value].TurnPhase = TurnPhase.Action;
+
+            // Setup 
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.Move(gameState, BoardSector.East, 0);
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void WhenMovingToNonAdjacentSpace_PlayerCannotMove()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.Move(gameState, BoardSector.North, 0);
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void WhenInMovementPhase_PlayerCanOnlyMoveOnce()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.Move(gameState, BoardSector.East, 0);
+            gameState = PlayerActions.Move(gameState, BoardSector.North, 0);
+
+            // Update Setup to Expected
+            var clonedPlayer = clonedGameState.Players[clonedGameState.ActivePlayer.Value];
+            clonedPlayer.Location = BoardSector.East;
+            clonedPlayer.DiscardPile.Add(clonedPlayer.Hand.First());
+            clonedPlayer.Hand.RemoveAt(0);
+            clonedPlayer.HasMoved = true;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void WhenInMovementPhase_PlayerCanMoveUsingStaminaToken()
+        {
+            var gameState = startingGameState.Copy();
+            gameState.Players[gameState.ActivePlayer.Value].Tokens.Add(PlayerTokens.Stamina);
+
+            // Setup 
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.Move(gameState, BoardSector.East, null, true);
+
+            // Update Setup to Expected
+            var clonedPlayer = clonedGameState.Players[clonedGameState.ActivePlayer.Value];
+            clonedPlayer.Location = BoardSector.East;
+            clonedPlayer.Tokens.Remove(PlayerTokens.Stamina);
+            clonedPlayer.HasMoved = true;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void WhenInMovementPhase_EndingPhaseWithoutMovingBecomesThreatened()
+        {
+            var gameState = startingGameState.Copy();
+
+            // Setup 
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.EndTurnPhase(gameState);
+
+            // Update Setup to Expected
+            var clonedPlayer = clonedGameState.Players[clonedGameState.ActivePlayer.Value];
+            clonedPlayer.Tokens.Add(PlayerTokens.Threatened);
+            clonedPlayer.TurnPhase = TurnPhase.Action;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+        [Fact]
+        public void WhenThreatenedPlayerMoves_PlayerLosesThreatenedToken()
+        {
+            var gameState = startingGameState.Copy();
+            gameState.Players[gameState.ActivePlayer.Value].Tokens.Add(PlayerTokens.Threatened);
+
+            // Setup 
+            var clonedGameState = gameState.Copy();
+
+            // Perform Action
+            gameState = PlayerActions.Move(gameState, BoardSector.East, 0);
+
+            // Update Setup to Expected
+            var clonedPlayer = clonedGameState.Players[clonedGameState.ActivePlayer.Value];
+            clonedPlayer.Location = BoardSector.East;
+            clonedPlayer.DiscardPile.Add(clonedPlayer.Hand.First());
+            clonedPlayer.Hand.RemoveAt(0);
+            clonedPlayer.Tokens.Remove(PlayerTokens.Threatened);
+            clonedPlayer.HasMoved = true;
+
+            Assert.Equal(gameState.Serialize(), clonedGameState.Serialize());
+        }
+
+    }
+
     public class Tests
     {
         // ROUND ORDER
@@ -293,26 +434,26 @@ namespace PrimalTests
         // Lowest refresh value behavior of monster is discarded at start of round - DONE
         // All behavior cards with lowest refresh value are discarded when there is a tie - DONE
         // Monster gains 1 struggle per player at start of round - DONE
-        // If struggle is equal to higher than 3 * player count, unleash occurs
+        // If struggle is equal to higher than 3 * player count, unleash occurs - DONE
 
         // 3: Player turns
-        // Player with aggro becomes first player at start of round
-        // Next player in turn order has their turn after first player ends their turn
+        // Player with aggro becomes first player at start of round - DONE
+        // Next player in turn order has their turn after first player ends their turn - DONE
 
         // 4: End of round
-        // Round advances when all players have ended their turn
-        // End of round triggers take place at end of round
+        // Round advances when all players have ended their turn - DONE
+        // End of round triggers take place at end of round - DONE
 
 
         // PLAYER TURN
 
         // 1: Movement
-        // Player can only move during their turn during movement phase, or when permitted by monster behavior
-        // Player can only move to adjacent space
-        // Player must spend one stamina to move
-        // Players can only move once during movement phase
-        // Player becomes threatened if they do not move
-        // Player loses threatened status upon moving
+        // Player can only move during their turn during movement phase, or when permitted by monster behavior - DONE
+        // Player can only move to adjacent space  - DONE
+        // Player must spend one stamina to move  - DONE
+        // Players can only move once during movement phase  - DONE
+        // Player becomes threatened if they do not move  - DONE
+        // Player loses threatened status upon moving  - DONE
 
         // 2: Action
         // Player can only use the revive action once per turn
@@ -365,7 +506,7 @@ namespace PrimalTests
         // Rampage cards are triggered
         // If multiple behavior cards are triggered, the player(s) can choose the resolution order
         // Any event or card ability is that triggers a behavior is fully resolved before the behavior is resolved
-        // The behavior card (and rampage card if one is triggered) is discarded and new card(s) are drawn
+        // The behavior(s) card (and rampage card if one is triggered) is discarded and new card(s) are drawn
         // When the behavior deck is empty, the boss gains one struggle and the behavior discard pile is reshuffled, and escalation is triggered
         // If two behavior cards are triggered at the same time, and a rampage card is drawn to replace the first, rampage is triggered
         // If multiple monster cards trigger at the same time, the order of trigger is stance -> peril -> behavior -> other cards, with players deciding the order of simultaneous effects

@@ -1,15 +1,14 @@
 using System.Linq;
-using Primal.Business.Helpers;
 using Primal.Common;
 using Primal.Extensions;
 
-namespace Primal.Business
+namespace Primal.Business.Monsters
 {
     public static class MonsterActions
     {
         public static int GetMonsterDamage(GameState gameState)
         {
-            var monsterDefinition = Mappings.MonsterMap(gameState.Monster.Type);
+            var monsterDefinition = MonsterMappings.MonsterMap(gameState.Monster.Type);
             //TODO: Account for bonus damage
             return monsterDefinition.StanceCards.Where(x => x.StanceNumber == gameState.Monster.Stance).Single().Damage;
         }

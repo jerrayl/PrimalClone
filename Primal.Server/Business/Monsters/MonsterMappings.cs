@@ -1,11 +1,11 @@
 using System;
 using Primal.Common;
 
-namespace Primal.Business.Helpers
+namespace Primal.Business.Monsters
 {
-    public static class Mappings
+    public static class MonsterMappings
     {
-        public static IMonster MonsterMap(MonsterType monsterType) => monsterType switch
+        public static IMonsterDefinition MonsterMap(MonsterType monsterType) => monsterType switch
         {
             MonsterType.Vyraxen => new Vyraxen(),
             _ => throw new NotImplementedException()

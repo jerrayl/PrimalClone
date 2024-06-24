@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using Primal.Common;
 
-namespace Primal.Business.Helpers
+namespace Primal.Business.Monsters
 {
-    public interface IMonster
+    public interface IMonsterDefinition
     {
         int[] AttritionDeck { get; }
         Dictionary<int, BehaviorCard> BehaviorCards { get; }

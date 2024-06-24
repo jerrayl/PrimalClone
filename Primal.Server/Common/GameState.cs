@@ -10,6 +10,13 @@ namespace Primal.Common
         public Monster Monster { get; set; } = new();
         public List<Player> Players { get; set; } = [];
         public List<int> TriggeredMonsterBehaviors = [];
+        public List<Trigger> ActiveTriggers = [];
+    }
+
+    public record Trigger
+    {
+        public TriggerType Type { get; set; }
+        public TriggerSource Source { get; set; }
     }
 
     public record Monster
@@ -78,6 +85,7 @@ namespace Primal.Common
         public TurnPhase? TurnPhase { get; set; }
         public bool HasTakenTurn { get; set; }
         public bool HasEndedPhase { get; set; }
+        public List<int> Hand { get; set; } = [];
         public List<int> Sequence { get; set; } = [];
         public List<int> Deck { get; set; } = [];
         public List<int> DiscardPile { get; set; } = [];
@@ -90,6 +98,7 @@ namespace Primal.Common
         public int?[] Potions { get; set; } = [null, null, null];
         public bool HasConsumed { get; set; }
         public bool HasUsedRevive { get; set; }
+        public bool HasMoved { get; set; }
     }
 
     public record MasteryCardState

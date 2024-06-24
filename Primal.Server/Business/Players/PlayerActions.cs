@@ -1,17 +1,53 @@
 using System;
 using System.Linq;
 using Primal.Business.Equipment;
-using Primal.Business.Helpers;
+using Primal.Business.Monsters;
 using Primal.Common;
 using Primal.Extensions;
 
-namespace Primal.Business
+namespace Primal.Business.Players
 {
     public static class PlayerActions
     {
-        public static GameState Move(int playerIndex, BoardSector sector, int? discardedCardId, bool useStaminaToken)
+        public static GameState Move(GameState gameState, BoardSector sector, int? discardedCardIndex, bool useStaminaToken = false)
         {
-            throw new NotImplementedException();
+            if (!gameState.ActivePlayer.HasValue)
+            {
+                return gameState;
+            }
+
+            var player = gameState.Players[gameState.ActivePlayer.Value];
+            var playerClassDefinition = PlayerMappings.PlayerMap(player.Type);
+            var isNotMovementPhase = player.TurnPhase != TurnPhase.Movement;
+            var destinationIsNotAdjacentToCurrentSector = !player.Location.IsAdjacentTo(sector);
+            var noStaminaProvided = !discardedCardIndex.HasValue && !useStaminaToken;
+            var cardToDiscard = useStaminaToken ? null : playerClassDefinition.ActionCards.Where(card => card.Id == player.Hand[discardedCardIndex!.Value]).Single();
+            var invalidCardProvided = !useStaminaToken && (player.Hand.Count < discardedCardIndex || cardToDiscard!.StaminaValue < 1);
+            var noStaminaToken = useStaminaToken && !player.Tokens.Contains(PlayerTokens.Stamina);
+            var playerHasMoved = player.HasMoved;
+
+            if (isNotMovementPhase || destinationIsNotAdjacentToCurrentSector || noStaminaProvided || invalidCardProvided || playerHasMoved)
+            {
+                return gameState;
+            }
+
+            var newGameState = gameState.Copy();
+            var newPlayer = newGameState.Players[newGameState.ActivePlayer!.Value];
+            newPlayer.HasMoved = true;
+            newPlayer.Tokens.Remove(PlayerTokens.Threatened);
+            newPlayer.Location = sector;
+            if (useStaminaToken)
+            {
+                newPlayer.Tokens.Remove(PlayerTokens.Stamina);
+            }
+            else
+            {
+                newPlayer.DiscardPile.Add(newPlayer.Hand[discardedCardIndex!.Value]);
+                newPlayer.Hand.RemoveAt(discardedCardIndex!.Value);
+            }
+
+
+            return newGameState;
         }
 
         public static GameState PlayCard(int playerIndex, int cardId, int[] discardedCardIds, bool useStaminaToken)
@@ -19,19 +55,25 @@ namespace Primal.Business
             throw new NotImplementedException();
         }
 
-        public static GameState EndTurnPhase(GameState gamesState, int playerIndex)
+        public static GameState EndTurnPhase(GameState gameState)
         {
-            if (gamesState.ActivePlayer != playerIndex)
+            if (!gameState.ActivePlayer.HasValue)
             {
-                return gamesState;
+                return gameState;
             }
 
-            var newGameState = gamesState.Copy();
-            var player = newGameState.Players[playerIndex];
+            var newGameState = gameState.Copy();
+            var player = newGameState.Players[newGameState.ActivePlayer!.Value];
 
             switch (player.TurnPhase)
             {
                 case TurnPhase.Movement:
+                    if (!player.HasMoved)
+                    {
+                        player.Tokens.Add(PlayerTokens.Threatened);
+                    }
+                    player.HasMoved = false;
+                    player.TurnPhase = TurnPhase.Action;
                     break;
                 case TurnPhase.Action:
                     break;
@@ -44,7 +86,7 @@ namespace Primal.Business
 
                     if (newGameState.Players.All(x => x.HasTakenTurn))
                     {
-                        foreach(var otherPlayer in newGameState.Players)
+                        foreach (var otherPlayer in newGameState.Players)
                         {
                             otherPlayer.HasTakenTurn = false;
                         }
@@ -79,7 +121,7 @@ namespace Primal.Business
                     break;
                 case RoundPhase.MonsterUpkeep:
                     var monster = newGameState.Monster;
-                    var monsterDefinition = Mappings.MonsterMap(newGameState.Monster.Type);
+                    var monsterDefinition = MonsterMappings.MonsterMap(newGameState.Monster.Type);
                     if (newGameState.Round != 1)
                     {
                         var lowestRefreshValue = monster.CurrentBehaviors.Select(cardId => monsterDefinition.BehaviorCards[cardId].RefreshValue).Min();
@@ -139,10 +181,11 @@ namespace Primal.Business
         public static GameState UsePotion(GameState gameState, int playerIndex, int potionIndex)
         {
             var oldPlayer = gameState.Players[playerIndex];
-            if (oldPlayer.HasConsumed || oldPlayer.Potions[potionIndex] is null){
+            if (oldPlayer.HasConsumed || oldPlayer.Potions[potionIndex] is null)
+            {
                 return gameState;
             }
-            
+
             var newGameState = Potion.Effects[oldPlayer.Potions[potionIndex]!.Value](playerIndex, gameState);
             var player = newGameState.Players[playerIndex];
             player.Potions[potionIndex] = null;

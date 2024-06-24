@@ -1,11 +1,11 @@
 using Primal.Common;
 
-namespace Primal.Business.Helpers
+namespace Primal.Business.Players
 {
-    public static class GreatBow
+    public class GreatBow : IPlayerDefinition
     {
         public const string Name = "Mirah"; 
-        public static ActionCard[] ActionCards { get { return [
+        public ActionCard[] ActionCards { get { return [
             new(){
                 Id = 1,
                 Name = "Silent Arrow",
@@ -252,7 +252,7 @@ namespace Primal.Business.Helpers
            }
         ];}}
 
-        public static MasteryCard[] MasteryCards { get { return [
+        public MasteryCard[] MasteryCards { get { return [
         new(){
                 Id = 1,
                 Name = "Ultimate Shot",
